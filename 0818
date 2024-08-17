@@ -1,0 +1,43 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# WebDriverのパスを設定
+driver_path = 'C:\\Users\\yukik\\Desktop\\chromedriver.exe'  # 正しいパスに変更
+
+# サービスオブジェクトを作成
+service = Service(driver_path)
+
+# オプションを設定して、ヘッドレスモードで実行（ブラウザを表示したい場合はこの行をコメントアウト）
+chrome_options = Options()
+# chrome_options.add_argument('--headless')  # コメントアウトしてブラウザを表示
+
+# WebDriverを起動
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# Suumoのページを開く
+url = "https://suumo.jp/chintai/gumma/ensen/"
+driver.get(url)
+
+# ページが完全に読み込まれるのを待つ
+wait = WebDriverWait(driver, 10)
+wait.until(EC.presence_of_element_located((By.XPATH, "//label[contains(text(), '高崎線')]")))
+
+# 指定した路線名をチェックする例（例: 高崎線）
+route_name = "高崎線"  # チェックしたい路線名をここで指定
+
+# 対象のチェックボックスを見つけてクリックする
+try:
+    checkbox = driver.find_element(By.XPATH, f"//label[contains(text(), '{route_name}')]/preceding-sibling::input")
+    checkbox.click()
+    print(f"'{route_name}' のチェックボックスをクリックしました。")
+except Exception as e:
+    print(f"エラーが発生しました: {e}")
+
+# 必要に応じて他の操作を追加（例: 検索ボタンをクリックするなど）
+
+# ブラウザを閉じる
+driver.quit()
