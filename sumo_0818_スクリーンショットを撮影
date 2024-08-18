@@ -1,0 +1,69 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from PIL import Image
+import openpyxl
+from openpyxl.drawing.image import Image as ExcelImage
+
+# WebDriverのパスを設定
+driver_path = 'C:\\Users\\yukik\\Desktop\\chromedriver.exe'  # 正しいパスに変更
+
+# サービスオブジェクトを作成
+service = Service(driver_path)
+
+# オプションを設定して、ヘッドレスモードを無効にしてブラウザを表示
+chrome_options = Options()
+# chrome_options.add_argument('--headless')  # コメントアウトしてブラウザを表示
+
+# WebDriverを起動
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# ターゲットページを開く
+url = "https://suumo.jp/chintai/hokkaido_/ensen/"  # 例としてSuumoのページを使用
+driver.get(url)
+
+# ページが完全に読み込まれるのを待つ
+wait = WebDriverWait(driver, 20)  # タイムアウトを20秒に設定
+wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="js-gotoEkiForm"]/div[1]/table/tbody/tr')))
+
+# ターミナルから検索文字を入力
+search_keyword = input("検索する文字列を入力してください: ")
+
+# テーブル内のすべてのチェックボックスを含むリスト要素を取得
+checkboxes = driver.find_elements(By.XPATH, '//*[@id="js-gotoEkiForm"]/div[1]/table/tbody/tr/td/div/ul/li')
+
+# 部分一致した要素のチェックボックスをクリックし、ハイライト
+for checkbox in checkboxes:
+    label = checkbox.text
+    if search_keyword in label:
+        # チェックボックスをJavaScriptでクリック
+        checkbox_element = checkbox.find_element(By.XPATH, './/input[@type="checkbox"]')
+        driver.execute_script("arguments[0].click();", checkbox_element)
+        # 要素をハイライト（背景色を変更）
+        driver.execute_script("arguments[0].style.backgroundColor = 'yellow';", checkbox)
+        print(f"'{label}' に部分一致したチェックボックスをクリックしました。")
+
+# スクリーンショットを撮影
+screenshot_path = "screenshot.png"
+driver.save_screenshot(screenshot_path)
+print(f"スクリーンショットを {screenshot_path} に保存しました。")
+
+# Excelファイルを作成または開く
+excel_path = "C:\\Users\\yukik\\Desktop\\suumo_screenshot.xlsx"
+wb = openpyxl.Workbook()
+ws = wb.active
+ws.title = "スクリーンショット"
+
+# Excelにスクリーンショットを貼り付け
+img = ExcelImage(screenshot_path)
+ws.add_image(img, 'A1')
+
+# Excelファイルを保存
+wb.save(excel_path)
+print(f"スクリーンショットをExcelファイルに保存しました: {excel_path}")
+
+# ブラウザを閉じる
+driver.quit()
