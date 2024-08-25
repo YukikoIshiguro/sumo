@@ -1,0 +1,74 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+import time
+
+# WebDriverのパスを設定
+driver_path = 'C:\\Users\\yukik\\Desktop\\chromedriver.exe'  # 正しいパスに変更
+
+# サービスオブジェクトを作成
+service = Service(driver_path)
+
+# オプションを設定して、ヘッドレスモードで実行（ブラウザを表示したい場合はこの行をコメントアウト）
+chrome_options = Options()
+# chrome_options.add_argument('--headless')  # コメントアウトしてブラウザを表示
+
+# WebDriverを起動
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# ターゲットページを開く
+url = "https://suumo.jp/jj/chintai/kensaku/FR301FB004/?ar=010&bs=040&ra=001&rn=4000&srch_navi=1"
+driver.get(url)
+
+# WebDriverWaitを使用してページが完全に読み込まれるのを待つ
+wait = WebDriverWait(driver, 60)  # タイムアウトを60秒に設定
+
+# ステップ1: 駅名を入力
+search_station = input("選択する駅名を入力してください: ").strip()
+
+# スクロールして全要素を読み込む
+def scroll_to_load_elements():
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)  # ページの読み込みを待つ
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+scroll_to_load_elements()
+
+# 駅名リンクをクリック
+try:
+    station_link = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, search_station)))
+    driver.execute_script("arguments[0].click();", station_link)
+    print(f"'{search_station}' のリンクをJavaScriptでクリックしました。")
+
+except TimeoutException:
+    print(f"エラー: 駅名 '{search_station}' のリンクが見つかりませんでした。")
+    driver.quit()
+    exit()
+
+# ページ遷移を待機
+try:
+    wait.until(EC.presence_of_element_located((By.XPATH, '//div[contains(@class, "c-table")]/table/tbody/tr')))
+    print("次のページの読み込みが完了しました。")
+except TimeoutException:
+    print("ページ遷移に時間がかかりすぎています。処理を終了します。")
+    driver.quit()
+    exit()
+
+# 最終的な遷移先のURLを出力
+final_url = driver.current_url
+print(f"最終画面遷移先のURL: {final_url}")
+
+# ユーザーが確認できるように、プログラムを停止せずに待機
+input("終了するにはEnterキーを押してください...")
+
+# ブラウザを閉じる
+driver.quit()
